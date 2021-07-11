@@ -223,6 +223,7 @@ static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *);
 static void togglebar(const Arg *arg);
+static void togglealtbar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
@@ -304,6 +305,10 @@ static Colormap cmap;
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
 
 /* function implementations */
+static int combo = 0;
+static int altbarvis = 0;
+
+
 void
 applyrules(Client *c)
 {
@@ -807,6 +812,11 @@ drawbar(Monitor *m)
 		x += w;
 	}
 
+	if (altbarvis) {
+		drw_setscheme(drw, scheme[SchemeNorm]);
+		drw_text(drw, 0, 0, LENGTH(tags), bh, 0, stext, 0);
+	}
+
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
@@ -817,6 +827,32 @@ drawbars(void)
 
 	for (m = mons; m; m = m->next)
 		drawbar(m);
+}
+
+void
+togglealtbar(const Arg *arg)
+{
+	altbarvis = 1;
+	drawbars();
+}
+
+void
+keyrelease(XEvent *e) {
+	combo = 0;
+
+	if (XEventsQueued(dpy, QueuedAfterReading)) {
+		XEvent ne;
+		XPeekEvent(dpy, &ne);
+
+		if (ne.type == KeyPress && ne.xkey.time == e->xkey.time &&
+				ne.xkey.keycode == e->xkey.keycode) {
+			XNextEvent(dpy, &ne);
+			return;
+		}
+	}
+
+	altbarvis = 0;
+	drawbars();
 }
 
 void
